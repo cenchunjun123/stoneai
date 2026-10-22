@@ -279,9 +279,43 @@ stoneai search <关键词>
 stoneai snippet [名称]
 stoneai connect <工程.stone> "TcpIp,IP,PORT"
 stoneai watch  <工程.stone> <变量>
+stoneai install-skill [--target DIR]  # 部署本技能到 skills 目录
+stoneai mcp-config   [--name N]       # 输出 MCP 配置 JSON
+stoneai ship    [说明]                # 提交并推送本工具包的 git 仓库
 ```
 
 `stoneai` 不在 PATH 时用 `python -m stoneai`。
+
+---
+
+## 七之二、把改动推回 GitHub
+
+工具包本身是个 git 仓库，改完代码用一条命令提交并推送：
+
+```bash
+stoneai ship "feat: 加了什么"
+```
+
+等价于 `git add -A && git commit -m "..." && git push origin <当前分支>`。
+
+**要点：**
+
+- **省略说明**时自动用时间戳：`stoneai ship` → `update 2026-10-22 21:47`
+- **工作区干净**时直接返回 `nothing to commit`，不会产生空提交
+- **仓库位置**默认按已安装包的位置推断。如果同事是
+  `pip install git+https://...` 装的（没有 .git），会报
+  `not a git repository` —— 此时用 `--repo <clone 路径>` 指定。
+- **推送失败**时检查三项，命令会给出提示：
+  1. 网络 / VPN
+  2. `git config --global credential.helper manager`（记住密码）
+  3. `git remote -v`（远程地址是否正确）
+
+**AI 使用约定**：用户说「推上去」「提交一下」「同步到 GitHub」时，
+先跑 `stoneai ship "说明"`；提交说明用中文、概括本次改动，
+格式建议 `feat:` / `fix:` / `docs:` / `chore:` 前缀。
+
+**不要**在这台机器上写 `.ps1` 脚本代替 —— 系统执行策略是
+`RemoteSigned`，未签名脚本会被拒绝。改策略会降低系统安全性，别动。
 
 ---
 
