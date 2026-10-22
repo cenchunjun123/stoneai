@@ -1,0 +1,68 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- virtualenv ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- test / example output (STone build artifacts) ---
+examples_out/
+scratch/
+mcp_scratch/
+tests/it/
+tests/*/Output/
+tests/*/_stoneai_staging/
+it/
+**/Output/Resource*/
+**/Output/Configuration*/
+**/*.stone
+**/*.stprj
+**/SolutionMeta.xml
+**/SolutionUserSettings.xml
+**/flash.bin
+**/compilation.xml
+**/varListInfo.xml
+**/generation.xml
+**/debug.xml
+**/project-info.xml
+
+# --- tooling caches ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- editors / OS ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- local secrets ---
+.env
+.env.*
+*.pypirc
