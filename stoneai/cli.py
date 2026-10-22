@@ -302,14 +302,24 @@ def _ship(args) -> int:
 
     branch = git("rev-parse", "--abbrev-ref", "HEAD", capture=True).stdout.strip() or "main"
     print(f"pushing to origin/{branch} ...")
-    push = subprocess.run(["git", "push", "origin", branch], cwd=str(repo),
-                          text=True, encoding="utf-8", errors="replace")
+    # Capture git's output: git writes progress to stderr, which PowerShell
+    # renders as a scary red "error" block even when the push succeeded.
+    push = git("push", "origin", branch, capture=True)
     if push.returncode != 0:
         print("ERROR: push failed — check network / credentials.\n"
               "  git config --global credential.helper manager   (remember password)\n"
               "  git remote -v                                    (check the URL)",
               file=sys.stderr)
+        for stream in (push.stdout, push.stderr):
+            if stream and stream.strip():
+                print(stream.rstrip(), file=sys.stderr)
         return 3
+    summary = (push.stderr or push.stdout or "").strip()
+    for line in summary.splitlines():
+        line = line.strip()
+        if line and not line.startswith("To "):
+            print("  " + line)
+    # A push that returns 0 but reports "Everything up-to-date" is still fine.
     print("pushed OK")
     return 0
 
