@@ -306,10 +306,15 @@ def _ship(args) -> int:
     # renders as a scary red "error" block even when the push succeeded.
     push = git("push", "origin", branch, capture=True)
     if push.returncode != 0:
-        print("ERROR: push failed — check network / credentials.\n"
-              "  git config --global credential.helper manager   (remember password)\n"
-              "  git remote -v                                    (check the URL)",
-              file=sys.stderr)
+        blob = ((push.stderr or "") + (push.stdout or "")).lower()
+        if ("could not connect" in blob or "timeout" in blob
+                or "failed to connect" in blob):
+            _push_network_help(repo)
+        else:
+            print("ERROR: push failed.", file=sys.stderr)
+            print("  git config --global credential.helper manager   (remember password)\n"
+                  "  git remote -v                                    (check the URL)",
+                  file=sys.stderr)
         for stream in (push.stdout, push.stderr):
             if stream and stream.strip():
                 print(stream.rstrip(), file=sys.stderr)
@@ -322,6 +327,50 @@ def _ship(args) -> int:
     # A push that returns 0 but reports "Everything up-to-date" is still fine.
     print("pushed OK")
     return 0
+
+
+def _push_network_help(repo: Path) -> None:
+    """Diagnose a git network failure and offer the likely fix.
+
+    A very common cause on corporate/China networks: the browser reaches
+    GitHub through a local proxy, but git does not read the Windows system
+    proxy, so `git push` times out while the browser works fine.
+    """
+    import subprocess
+
+    print("ERROR: cannot reach the remote — this is a network problem, the "
+          "commit itself succeeded.", file=sys.stderr)
+
+    proxy = ""
+    try:
+        out = subprocess.run(
+            ["reg", "query",
+             r"HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        enable = server = ""
+        for line in out.stdout.splitlines():
+            low = line.lower()
+            if "proxyenable" in low:
+                enable = line.split()[-1]
+            elif "proxyserver" in low:
+                server = line.split()[-1]
+        if enable.strip() == "0x1" and server:
+            proxy = server
+    except Exception:
+        pass
+
+    if proxy:
+        print(f"\n  Detected a Windows system proxy: {proxy}")
+        print("  Your browser works because it uses this proxy; git does not")
+        print("  read the system proxy by default. Enable it for git with:\n")
+        print(f'    git config --global http.proxy  "http://{proxy}"')
+        print(f'    git config --global https.proxy "http://{proxy}"')
+        print("\n  To undo later (when you are on a direct connection):")
+        print("    git config --global --unset http.proxy")
+        print("    git config --global --unset https.proxy")
+    else:
+        print("\n  Nothing pushed. Check VPN / internet access, then retry:")
+        print(f"    git -C \"{repo}\" push origin main")
 
 
 def _doctor(args) -> int:
