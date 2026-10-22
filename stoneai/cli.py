@@ -13,6 +13,7 @@
     stoneai connect <solution.stone> <conn-string>    connect to a target
     stoneai install-skill [--target DIR]              deploy the bundled AI skill
     stoneai mcp-config [--name N]                     print MCP client config JSON
+    stoneai ship    [message]                         commit + push the toolkit repo
 """
 from __future__ import annotations
 
@@ -101,12 +102,20 @@ def main(argv=None) -> int:
     p = sub.add_parser("mcp-config", help="print MCP client config JSON")
     p.add_argument("--name", default="stoneai")
 
+    p = sub.add_parser("ship", help="commit + push the toolkit repository")
+    p.add_argument("message", nargs="?", default=None,
+                   help="commit message (default: timestamped)")
+    p.add_argument("--repo", default=None,
+                   help="path to the git checkout (default: this package's source)")
+
     args = ap.parse_args(argv)
 
     if args.cmd == "install-skill":
         return _install_skill(args)
     if args.cmd == "mcp-config":
         return _mcp_config(args)
+    if args.cmd == "ship":
+        return _ship(args)
 
     if args.cmd == "doctor":
         return _doctor(args)
@@ -237,6 +246,71 @@ def _mcp_config(args) -> int:
     cfg = {"mcpServers": {args.name: {"command": sys.executable,
                                       "args": ["-m", "stoneai.mcp_server"]}}}
     print(json.dumps(cfg, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _ship(args) -> int:
+    """Commit the toolkit repo and push it — ``git add -A && commit && push``.
+
+    Working directory is located from the installed package when this is an
+    editable checkout; otherwise --repo is required.
+    """
+    import subprocess
+    import datetime
+
+    if args.repo:
+        repo = Path(args.repo).resolve()
+    else:
+        # .../stoneai/stoneai/cli.py -> .../stoneai
+        repo = Path(__file__).resolve().parents[1]
+
+    def git(*cmd, capture=False):
+        r = subprocess.run(["git", *cmd], cwd=str(repo), text=True,
+                           encoding="utf-8", errors="replace",
+                           capture_output=capture)
+        return r
+
+    if not (repo / ".git").exists():
+        print(f"ERROR: {repo} is not a git repository.", file=sys.stderr)
+        print("   Install from a git clone, or pass --repo <path-to-clone>.",
+              file=sys.stderr)
+        return 2
+
+    status = git("status", "--porcelain", capture=True)
+    if status.returncode != 0:
+        print("ERROR: git status failed:\n" + (status.stderr or ""), file=sys.stderr)
+        return 2
+    if not status.stdout.strip():
+        print("nothing to commit — working tree clean")
+        return 0
+
+    print("changes:")
+    for line in status.stdout.rstrip().splitlines():
+        print("  " + line)
+
+    msg = args.message or ("update " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
+    add = git("add", "-A", capture=True)
+    if add.returncode != 0:
+        print("ERROR: git add failed:\n" + (add.stderr or ""), file=sys.stderr)
+        return 2
+    commit = git("commit", "-m", msg, capture=True)
+    if commit.returncode != 0:
+        print("ERROR: git commit failed:\n"
+              + (commit.stderr or commit.stdout or ""), file=sys.stderr)
+        return 2
+    print("committed: " + (commit.stdout or "").strip().splitlines()[0])
+
+    branch = git("rev-parse", "--abbrev-ref", "HEAD", capture=True).stdout.strip() or "main"
+    print(f"pushing to origin/{branch} ...")
+    push = subprocess.run(["git", "push", "origin", branch], cwd=str(repo),
+                          text=True, encoding="utf-8", errors="replace")
+    if push.returncode != 0:
+        print("ERROR: push failed — check network / credentials.\n"
+              "  git config --global credential.helper manager   (remember password)\n"
+              "  git remote -v                                    (check the URL)",
+              file=sys.stderr)
+        return 3
+    print("pushed OK")
     return 0
 
 
