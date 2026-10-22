@@ -89,6 +89,15 @@ stoneai search alarm
 stoneai snippet FOR
 ```
 
+### 6. 团队协作：把改动推回仓库
+
+```powershell
+stoneai ship "改了什么说明"
+```
+
+等价于 `git add -A && git commit && git push`，不用记 git 命令。
+首次推送会弹出 GitHub 登录，勾选「记住凭据」后以后就免密了。
+
 ---
 
 ## MCP server（给 AI agent 用）
