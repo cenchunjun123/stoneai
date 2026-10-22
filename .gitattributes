@@ -1,0 +1,14 @@
+# Normalize line endings so a clone on any OS behaves the same.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF so PowerShell/Notepad behave normally.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary-ish assets must never be touched.
+*.bin binary
+*.whl binary
+*.png binary
+*.jpg binary
+*.zip binary
