@@ -1,17 +1,44 @@
 # stoneai — AI 自动化编程工具包 for CAREL STone
 
 为卡乐（CAREL）**STone** 编程软件（c.suite 6.x / STone 1.8.x）提供的一套
-**不打开 IDE、不点鼠标**的自动化编程能力：
+**不打开 IDE、不点鼠标**的自动化编程能力。
+
+![AI 驱动 STone 的完整闭环](docs/demo/img/workflow.png)
 
 - 通过 STone 官方自动化 API（`SToneCLI iron-python`）创建工程、注册源码、编译
 - 把编译器的诊断结果解析成**结构化数据**（文件 / 行 / 列 / 错误码 / 消息）
 - 提取**符号表**：POU、成员接口（输入/输出/局部变量及类型）、变量、任务
 - 生成**可直接编译通过**的 ST 骨架代码（PROGRAM / FUNCTION_BLOCK / 任务配置）
-- 内置 **System.* 库 API 知识库**（1000+ 条）与 IDE 代码片段
-- 以 **MCP server** 形式暴露给 AI agent，实现“生成 → 编译 → 读错误 → 修复”闭环
+- 内置 **System.* 库 API 知识库**（640 条真实签名）与 IDE 代码片段
+- 以 **MCP server** 形式暴露给 AI agent，实现"生成 → 编译 → 读错误 → 修复"闭环
 
 > 纯工具层，**不绕过授权**：编译需要本机安装 STone 且持有有效许可证
 > （`stoneai doctor` 会实际编译一个临时工程来验证）。
+
+---
+
+## 实际运行效果
+
+下面是大模型驱动整个流程的**真实终端输出**（不是示意图）：
+
+![真实运行输出](docs/demo/img/terminal.png)
+
+编译失败时，AI 拿到的不是一坨文本日志，而是可以直接定位的结构化诊断：
+
+![结构化诊断](docs/demo/img/diagnostics.png)
+
+---
+
+## 一键复现
+
+不需要配 AI、不需要 MCP，直接跑这个脚本就能看到上面整套流程：
+
+```powershell
+python examples/demo.py
+```
+
+它会依次完成：检索 API → 建工程 → 生成代码 → 编译 → 读符号表 →
+故意写错 → 捕获诊断 → 自动修复 → 编译通过。约 50 秒。
 
 ---
 

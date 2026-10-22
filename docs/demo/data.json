@@ -1,0 +1,107 @@
+{
+ "generated_code": "(** 冷水机组加卸载控制 *)\nFUNCTION_BLOCK ChillerStage\n    VAR_INPUT\n        rTempIn                  : REAL;  (* 进水温度 *)\n        rTempOut                 : REAL;  (* 出水温度 *)\n        rSetpoint                : REAL;  (* 温度设定 *)\n    END_VAR\n    VAR_OUTPUT\n        bStageUp                 : BOOL;  (* 加载指令 *)\n        bStageDown               : BOOL;  (* 卸载指令 *)\n    END_VAR\n    VAR\n        rDeadband                : REAL := 0.5;  (* 死区 *)\n    END_VAR\n\n    bStageUp := FALSE;\n    bStageDown := FALSE;\n    IF rTempOut > rSetpoint + rDeadband THEN\n        bStageUp := TRUE;\n    ELSIF rTempOut < rSetpoint - rDeadband THEN\n        bStageDown := TRUE;\n    END_IF;\nEND_FUNCTION_BLOCK\n",
+ "build_ok": true,
+ "artifact": "flash.bin",
+ "symbol_summary": "configuration=1, member=6, pou=2, resource=1, task=1, variable=1",
+ "interfaces": {
+  "ChillerStage": {
+   "kind": "FunctionBlockType",
+   "inputs": [
+    "rTempIn",
+    "rTempOut",
+    "rSetpoint"
+   ],
+   "outputs": [
+    "bStageUp",
+    "bStageDown"
+   ],
+   "in_outs": [],
+   "locals": [
+    "rDeadband"
+   ],
+   "types": {
+    "rTempIn": "REAL",
+    "rTempOut": "REAL",
+    "rSetpoint": "REAL",
+    "bStageUp": "BOOL",
+    "bStageDown": "BOOL",
+    "rDeadband": "REAL"
+   }
+  },
+  "Main": {
+   "kind": "ProgramType",
+   "inputs": [],
+   "outputs": [],
+   "in_outs": [],
+   "locals": [],
+   "types": {}
+  }
+ },
+ "error": [
+  {
+   "code": "E0078",
+   "level": "Error",
+   "message": "The name 'rSetpont' could not be found (are you missing a using directive, a project reference or a library reference?)",
+   "file": "D:\\\\项目\\\\ChillerDemo\\\\ChillerStage.st",
+   "line": 20,
+   "col": 22,
+   "end_line": 20,
+   "end_col": 30
+  }
+ ],
+ "api_count": 640,
+ "api_hits": [
+  {
+   "kind": "FUNCTION",
+   "name": "System.Alarm.GetAlarmLog",
+   "signature": "FUNCTION GetAlarmLog  (VAR_IN_OUT data : ARRAY [*] OF BYTE)  (VAR_INPUT arrayOffset : UDINT; offset : UDINT; size : UDINT; file_number : UINT)  (VAR alarm_data_common : AlarmDataCommon)",
+   "source": "C:\\Program Files (x86)\\CAREL\\STone\\Data\\Libraries\\System\\System.Alarm.st"
+  }
+ ],
+ "mcp_tools": [
+  {
+   "name": "stone_doctor",
+   "desc": "Check the STone environment: SToneCLI, IronPython API and whether a dummy solution compiles (valid license)."
+  },
+  {
+   "name": "stone_solution_create",
+   "desc": "Create a new STone solution from a template (BaseProject, EmptyProject, ...). Returns the solution path."
+  },
+  {
+   "name": "stone_solution_state",
+   "desc": "List projects, registered files and build configurations of a .stone solution."
+  },
+  {
+   "name": "stone_files_add",
+   "desc": "Write an .st source into a project, register it and compile. Returns build diagnostics (code, file, line, column)."
+  },
+  {
+   "name": "stone_build",
+   "desc": "Compile a solution/project. Returns structured errors and warnings and the flash.bin artifact path when it succeeds."
+  },
+  {
+   "name": "stone_symbols",
+   "desc": "Symbol index of the last build: POUs, their member interfaces (inputs/outputs/locals with types), variables, tasks, types. Optional: query=substring, interfaces=true."
+  },
+  {
+   "name": "stone_api_search",
+   "desc": "Search the CAREL System.* library API (1000+ entries) for functions and function blocks, e.g. keyword 'log', 'alarm', 'modbus'."
+  },
+  {
+   "name": "stone_snippet",
+   "desc": "Show the IDE's own ST code snippets (exact statement spellings)."
+  },
+  {
+   "name": "stone_pou_generate",
+   "desc": "Generate a compiling PROGRAM/FUNCTION_BLOCK skeleton with typed variable sections; the body stays yours."
+  },
+  {
+   "name": "stone_target_connect",
+   "desc": "Connect STone to a target, e.g. 'TcpIp,10.10.9.128,4122'."
+  },
+  {
+   "name": "stone_watch_read",
+   "desc": "Read one variable from the connected target."
+  }
+ ]
+}
