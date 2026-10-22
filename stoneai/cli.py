@@ -34,8 +34,18 @@ def _json(obj) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=1)
 
 
+def _version() -> str:
+    try:
+        from . import __version__
+        return __version__
+    except Exception:
+        return "0.0.0"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="stoneai", description="AI automation for CAREL STone")
+    ap.add_argument("--version", action="version",
+                    version="stoneai " + _version())
     ap.add_argument("--cli", default=None, help="path to SToneCLI.exe")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
