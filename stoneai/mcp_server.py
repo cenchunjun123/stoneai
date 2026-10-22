@@ -52,6 +52,21 @@ def _error(msg: str) -> dict:
     return {"content": [{"type": "text", "text": f"ERROR: {msg}"}], "isError": True}
 
 
+def _require(args: dict, *names: str) -> None:
+    """Fail with a readable message instead of a bare KeyError.
+
+    MCP clients surface a raised exception as ``ERROR: KeyError: 'solution'``
+    which tells a model nothing about what to fix.
+    """
+    missing = [n for n in names if not args.get(n)]
+    if missing:
+        raise ValueError(
+            "missing required argument"
+            + ("s" if len(missing) > 1 else "")
+            + ": " + ", ".join(f"'{m}'" for m in missing)
+            + f" (got: {sorted(args) or 'nothing'})")
+
+
 def _text(payload) -> dict:
     return {"content": [{"type": "text", "text": json.dumps(payload, ensure_ascii=False, indent=1)}]}
 
@@ -79,6 +94,7 @@ def t_stone_doctor(args: dict) -> dict:
 
 
 def t_stone_solution_create(args: dict) -> dict:
+    _require(args, "base_dir", "name")
     r = _runner()
     sol = api.create_solution(args["base_dir"], args["name"],
                               args.get("template", "BaseProject"), runner=r)
@@ -87,12 +103,14 @@ def t_stone_solution_create(args: dict) -> dict:
 
 
 def t_stone_solution_state(args: dict) -> dict:
+    _require(args, "solution")
     r = _runner()
     sol = api.open_solution(args["solution"], runner=r)
     return _text(sol.state())
 
 
 def t_stone_files_add(args: dict) -> dict:
+    _require(args, "solution", "name", "code")
     r = _runner()
     sol = api.open_solution(args["solution"], runner=r)
     prj = sol.project_named(args["project"]) if args.get("project") else sol.project
@@ -105,6 +123,7 @@ def t_stone_files_add(args: dict) -> dict:
 
 
 def t_stone_build(args: dict) -> dict:
+    _require(args, "solution")
     r = _runner()
     sol = api.open_solution(args["solution"], runner=r)
     prj = sol.project_named(args["project"]) if args.get("project") else sol.project
@@ -117,6 +136,7 @@ def t_stone_build(args: dict) -> dict:
 
 
 def t_stone_symbols(args: dict) -> dict:
+    _require(args, "solution")
     r = _runner()
     sol = api.open_solution(args["solution"], runner=r)
     prj = sol.project_named(args["project"]) if args.get("project") else sol.project
@@ -130,6 +150,7 @@ def t_stone_symbols(args: dict) -> dict:
 
 
 def t_stone_api_search(args: dict) -> dict:
+    _require(args, "keyword")
     return _text([e.as_dict() for e in _kb().search(args["keyword"], int(args.get("limit", 20)))])
 
 
@@ -144,10 +165,28 @@ def t_stone_snippet(args: dict) -> dict:
 def t_stone_pou_generate(args: dict) -> dict:
     """Generate a compiling POU skeleton. The AI keeps control of the body."""
     kind = args.get("kind", "PROGRAM")
+    if not args.get("name"):
+        raise ValueError("'name' is required (the POU name)")
+
+    variables = args.get("variables", [])
+    if not isinstance(variables, list):
+        raise ValueError("'variables' must be an array of objects")
+
     pou = stgen.Pou(name=args["name"], kind=kind,
                     return_type=args.get("return_type"),
                     comment=args.get("comment"))
-    for v in args.get("variables", []):
+    for i, v in enumerate(variables):
+        if not isinstance(v, dict):
+            raise ValueError(
+                f"variables[{i}] must be an object like "
+                '{"name":"bEnable","type":"BOOL","input":true}, '
+                f'got {type(v).__name__}')
+        missing = [k for k in ("name", "type") if not v.get(k)]
+        if missing:
+            raise ValueError(
+                f"variables[{i}] is missing {', '.join(repr(m) for m in missing)}; "
+                f"each variable needs at least name and type, got keys "
+                f"{sorted(v.keys())}")
         pou.variables.append(stgen.Variable(
             name=v["name"], type=v["type"], init=v.get("init"),
             comment=v.get("comment"),
@@ -161,12 +200,14 @@ def t_stone_pou_generate(args: dict) -> dict:
 
 
 def t_stone_target_connect(args: dict) -> dict:
+    _require(args, "solution", "connection_string")
     r = _runner()
     return _text(r.call_with(args["solution"], "target_connect",
                              connection_string=args["connection_string"]))
 
 
 def t_stone_watch_read(args: dict) -> dict:
+    _require(args, "solution", "variable")
     r = _runner()
     return _text(r.call_with(args["solution"], "watch", variable=args["variable"]))
 

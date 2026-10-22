@@ -137,7 +137,70 @@ stoneai ship "改了什么说明"
 }
 ```
 
-可用工具：
+> `stoneai mcp-config` 会直接打印出本机可用的配置（`command` 用当前 Python 的
+> 绝对路径），复制粘贴即可。
+
+### 各客户端接入
+
+**Claude Code** — `~/.claude.json` 的 `mcpServers`：
+
+```json
+{
+  "mcpServers": {
+    "stoneai": {
+      "command": "C:\\Python314\\python.exe",
+      "args": ["-m", "stoneai.mcp_server"],
+      "env": { "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1" }
+    }
+  }
+}
+```
+
+**Codex** — `~/.codex/config.toml`：
+
+```toml
+[mcp_servers.stoneai]
+command = 'C:\Python314\python.exe'
+args = ["-m", "stoneai.mcp_server"]
+startup_timeout_sec = 120
+
+[mcp_servers.stoneai.env]
+PYTHONIOENCODING = "utf-8"
+PYTHONUTF8 = "1"
+```
+
+**DeepSeek Harness (DSH)** — `~/.dsh/profiles/desktop/cordis.patch.yml`。
+
+⚠️ DSH 这层是**按 id 覆盖已有行**的语义，新增插件必须包在 `insert:` 里，
+直接写 `- id: mcp-stoneai` 会因目标行不存在被静默跳过：
+
+```yaml
+- insert:
+    - id: mcp-stoneai
+      name: "@deepseek-ai/dsh-mcp-client"
+      config:
+        serverName: stoneai
+        transport: stdio
+        command: 'C:\Python314\python.exe'
+        args: [ "-m", "stoneai.mcp_server" ]
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: "1"
+        # STone 编译大工程可能几十秒，默认 60s 不够
+        toolCallTimeoutMs: 300000
+        # MCP 起不来也不阻断 harness 启动
+        failOnStartupError: false
+```
+
+模型里看到的工具名是 `mcp__stoneai__<工具名>`。改完要**完全退出并重开** DSH。
+
+### 配置要点（三个客户端通用）
+
+- **用 Python 绝对路径**，不要写 `python` —— 客户端启动子进程时不走你的 PATH
+- **`PYTHONIOENCODING=utf-8`** —— 不设的话中文路径 / 中文输出可能乱码
+- **超时给足** —— STone 冷启动编译可能要几十秒，默认值常常不够
+
+### 可用工具
 
 | 工具 | 作用 |
 |---|---|
