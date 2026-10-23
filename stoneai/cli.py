@@ -197,10 +197,13 @@ def main(argv=None) -> int:
     return 0
 
 
-def _skill_source() -> Path:
-    """The SKILL.md bundled inside the installed package."""
+def _skill_sources() -> list[Path]:
+    """All skill directories bundled inside the installed package."""
     here = Path(__file__).resolve().parent
-    return here / "skills" / "my-stoneai-skill" / "SKILL.md"
+    skills_dir = here / "skills"
+    if not skills_dir.is_dir():
+        return []
+    return sorted(p for p in skills_dir.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
 
 
 def _default_skills_root() -> Path | None:
@@ -213,9 +216,9 @@ def _default_skills_root() -> Path | None:
 
 
 def _install_skill(args) -> int:
-    src = _skill_source()
-    if not src.is_file():
-        print(f"ERROR: bundled skill not found at {src}", file=sys.stderr)
+    sources = _skill_sources()
+    if not sources:
+        print("ERROR: no bundled skills found", file=sys.stderr)
         print("Reinstall the package: pip install --force-reinstall stoneai", file=sys.stderr)
         return 2
     root = Path(args.target) if args.target else _default_skills_root()
@@ -224,22 +227,27 @@ def _install_skill(args) -> int:
               "  stoneai install-skill --target %USERPROFILE%\\.agents\\skills",
               file=sys.stderr)
         return 2
-    dest_dir = root / "my-stoneai-skill"
-    dest = dest_dir / "SKILL.md"
-    if dest.is_file() and not args.force:
-        old = dest.read_text(encoding="utf-8", errors="replace")
-        new = src.read_text(encoding="utf-8", errors="replace")
-        if old == new:
-            print(f"skill already up to date: {dest}")
-            return 0
-        print(f"skill exists and differs: {dest}")
-        print("   re-run with --force to overwrite")
-        return 1
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
-    print(f"installed skill -> {dest}")
-    print("Restart your AI client (or reload skills) to pick it up.")
-    return 0
+    failed = 0
+    for src_dir in sources:
+        dest_dir = root / src_dir.name
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for f in src_dir.iterdir():
+            if f.name == "__pycache__" or not f.is_file():
+                continue
+            dest = dest_dir / f.name
+            if dest.is_file() and not args.force:
+                old = dest.read_text(encoding="utf-8", errors="replace")
+                new = f.read_text(encoding="utf-8", errors="replace")
+                if old == new:
+                    print(f"skill file already up to date: {dest}")
+                    continue
+                print(f"skill file exists and differs: {dest}")
+                print("   re-run with --force to overwrite")
+                failed = max(failed, 1)
+                continue
+            dest.write_text(f.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
+            print(f"installed skill file -> {dest}")
+    return failed
 
 
 def _mcp_config(args) -> int:

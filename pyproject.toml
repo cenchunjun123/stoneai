@@ -27,4 +27,4 @@ stoneai = "stoneai.cli:main"
 packages = ["stoneai"]
 
 [tool.setuptools.package-data]
-stoneai = ["_bootstrap.py", "skills/*/SKILL.md"]
+stoneai = ["_bootstrap.py", "skills/*/SKILL.md", "skills/*/decrypt_isagraf.py"]
