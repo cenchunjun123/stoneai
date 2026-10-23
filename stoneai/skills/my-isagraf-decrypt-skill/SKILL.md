@@ -1,5 +1,5 @@
 ---
-name: isagraf-decrypt
+name: my-isagraf-decrypt-skill
 description: 解密 CAREL c.suite 1tool / ISaGRAF 5.x 工程的 POU 加密源码。从 .pp1 导出包或工程目录的 .isaxml 文件中恢复明文 ST/FBD 代码（XOR 流密码，密钥流与字节绝对位置绑定的 8 字节倒计数循环）。自动识别加密格式、自动验证解密正确性、密钥流变化时可用已知明文自动重推。当需要读取卡乐老平台（PCO/ISaGRAF）加密 POU 源码、把旧工程迁移到 STone、或逆向分析 .pp1/.isaxml 加密内容时使用。
 ---
 
