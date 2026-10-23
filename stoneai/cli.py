@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """``stoneai`` command line interface.
 
     stoneai doctor                      environment self check
@@ -208,7 +208,7 @@ def _skill_sources() -> list[Path]:
 
 def _default_skills_root() -> Path | None:
     home = Path.home()
-    for rel in ((".agents", "skills"), (".claude", "skills"), (".dsh", "skills"), (".codex", "skills")):
+    for rel in ((".agents", "skills"), (".claude", "skills"), (".dsh", "skills"), (".codex", "skills"), (".zcode", "skills")):
         cand = home.joinpath(*rel)
         if cand.is_dir():
             return cand
